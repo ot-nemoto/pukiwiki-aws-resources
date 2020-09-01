@@ -48,23 +48,58 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: wiki
-  SelfRefSecurityGroupIgress:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !GetAtt SecurityGroup.GroupId
-      IpProtocol: -1
-      SourceSecurityGroupId: !GetAtt SecurityGroup.GroupId
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 80
+        ToPort: 80
+        IpProtocol: tcp
   Volume:
     Type: AWS::EC2::Volume
     Properties:
       AvailabilityZone: !GetAtt Instance.AvailabilityZone
       SnapshotId: !Ref SnapshotId
+      Tags:
+      - Key: Name
+        Value: !Ref AWS::StackName
   VolumeAttachment:
     Type: AWS::EC2::VolumeAttachment
     Properties:
       Device: /dev/sdf
       InstanceId: !Ref Instance
       VolumeId: !Ref Volume
+  LifecyclePolicy:
+    Type: AWS::DLM::LifecyclePolicy
+    Properties:
+      Description: !Sub ${AWS::StackName}
+      ExecutionRoleArn: !GetAtt LifecyclePolicyRole.Arn
+      PolicyDetails:
+        ResourceTypes:
+        - VOLUME
+        Schedules:
+        - Name: !Sub "${AWS::StackName}-daily-snapshot-schedule"
+          CreateRule:
+            Interval: 24
+            IntervalUnit: HOURS
+            Times:
+            - "15:00"
+          RetainRule:
+            Count: 3
+        TargetTags:
+        - Key: Name
+          Value: !Ref AWS::StackName
+      State: ENABLED
+  LifecyclePolicyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: dlm.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole
 
 Outputs:
   ManagedInstanceSessionUrl:
