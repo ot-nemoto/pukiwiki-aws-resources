@@ -6,6 +6,7 @@
 
 
 ```sh
+# e.g.
 SNAPSHOT_ID=snap-0927dbdc6113398f0
 ```
 
