@@ -29,7 +29,7 @@ aws cloudformation create-stack \
 sudo su - ec2-user
 ```
 
-- ライブラリをインストール
+### Install libraries
 
 ```sh
 sudo yum -y update
@@ -55,7 +55,18 @@ sudo systemctl enable docker
 sudo systemctl start docker
 ```
 
-- wikiのボリュームをマウント
+### Install docker-compose
+
+```sh
+DOCKER_COMPOSE_VERSION=1.26.2
+sudo curl -L https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose --version
+  # docker-compose version 1.26.2, build eefe0d31
+```
+
+### Mount wiki volume
 
 ```sh
 lsblk
@@ -79,23 +90,17 @@ echo "$(sudo xfs_admin -u /dev/xvdf | tr -d ' ')     /wiki       xfs    defaults
   # UUID=224bb184-ea0e-4de5-b0c7-3c159dd23882     /wiki       xfs    defaults          0   0
 ```
 
-- Wikiイメージ作成
+### Startup Wiki
 
 ```sh
 pwd
   # /home/ec2-user
-git clone https://github.com/nemodija/pukiwiki-container.git
-cd pukiwiki-container
-curl -LO http://prdownloads.sourceforge.jp/pukiwiki/12957/pukiwiki-1.4.7_notb.tar.gz
-docker build -t nemodija/pukiwiki:1.4.7 .
-docker images
-  # REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
-  # nemodija/pukiwiki   1.4.7               08cd57cd6d33        7 seconds ago       734MB
-  # centos              centos5.11          b424fba01172        4 years ago         284MB
+git clone https://github.com/nemodija/pukiwiki-compose.git
+cd pukiwiki-compose/
+git submodule init
+git submodule update
 ```
 
-- コンテナ起動
+*docker-compose up*
 
-```sh
-docker run -d -it -v /wiki:/var/www/html/wiki -p 80:80 --name wiki nemodija/pukiwiki:1.4.7
-```
+- https://github.com/nemodija/pukiwiki-compose

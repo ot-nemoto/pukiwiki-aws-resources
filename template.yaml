@@ -14,6 +14,17 @@ Parameters:
     Default: ap-northeast-1a
 
 Resources:
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        UserData:
+          Fn::Base64: !Sub
+          - |
+            #!/bin/bash
+            systemctl disable postfix
+            systemctl stop postfix
+          - {}
   Instance: 
     Type: AWS::EC2::Instance
     Properties:
@@ -23,6 +34,9 @@ Resources:
       Tags:
       - Key: Name
         Value: !Ref AWS::StackName
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
       IamInstanceProfile: !Ref IamInstanceProfile
       SecurityGroupIds:
       - !Ref SecurityGroup
