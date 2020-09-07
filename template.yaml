@@ -12,6 +12,18 @@ Parameters:
   AvailabilityZone:
     Type: AWS::EC2::AvailabilityZone::Name
     Default: ap-northeast-1a
+  DockerComposeVersion:
+    Type: String
+    Default: 1.26.2
+  Relayhost:
+    Type: String
+  RelayhostPort:
+    Type: String
+    Default: 587
+  RelayhostUser:
+    Type: String
+  RelayhostPass:
+    Type: String
 
 Resources:
   LaunchTemplate:
@@ -24,7 +36,37 @@ Resources:
             #!/bin/bash
             systemctl disable postfix
             systemctl stop postfix
-          - {}
+            yum -y update
+            yum -y install docker git
+            systemctl enable docker
+            systemctl start docker
+            sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m`" -o /usr/local/bin/docker-compose
+            chmod +x /usr/local/bin/docker-compose
+            mkdir /wiki
+            mount /dev/xvdf /wiki
+            echo "$(sudo xfs_admin -u /dev/xvdf | tr -d ' ')     /wiki       xfs    defaults          0   0" >> /etc/fstab
+            git clone https://github.com/nemodija/pukiwiki-compose.git
+            cd pukiwiki-compose/
+            git submodule init
+            git submodule update
+            curl -L "http://prdownloads.sourceforge.jp/pukiwiki/12957/pukiwiki-1.4.7_notb.tar.gz" -o pukiwiki/pukiwiki-1.4.7_notb.tar.gz
+            cat <<EOT > env.yml
+            version: "3.5"
+            services:
+              mail:
+                environment:
+                  RELAYHOST: "[${RELAYHOST}]:${RELAYHOST_PORT}"
+                  MAIL_ADDRESS: ${RELAYHOST_USER}
+                  MAIL_PASSWORD: ${RELAYHOST_PASS}
+            EOT
+            docker-compose -f docker-compose.yml -f env.yml up -d
+          - {
+              DOCKER_COMPOSE_VERSION: !Ref DockerComposeVersion,
+              RELAYHOST: !Ref Relayhost,
+              RELAYHOST_PORT: !Ref RelayhostPort,
+              RELAYHOST_USER: !Ref RelayhostUser,
+              RELAYHOST_PASS: !Ref RelayhostPass
+            }
   Instance: 
     Type: AWS::EC2::Instance
     Properties:
@@ -40,6 +82,7 @@ Resources:
       IamInstanceProfile: !Ref IamInstanceProfile
       SecurityGroupIds:
       - !Ref SecurityGroup
+      KeyName: wiki
   IamInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -66,6 +109,10 @@ Resources:
       - CidrIp: 0.0.0.0/0
         FromPort: 80
         ToPort: 80
+        IpProtocol: tcp
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22
+        ToPort: 22
         IpProtocol: tcp
   Volume:
     Type: AWS::EC2::Volume
