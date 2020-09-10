@@ -115,6 +115,8 @@ Resources:
                   MAIL_ADDRESS: ${RELAYHOST_USER}
                   MAIL_PASSWORD: ${RELAYHOST_PASS}
             EOT
+            mkdir /var/log/wiki
+            mkdir /var/log/mail && chown 101:4 /var/log/mail
             docker-compose -f docker-compose.yml -f env.yml up -d
           - {
               DOCKER_COMPOSE_VERSION: !Ref DockerComposeVersion,
@@ -268,5 +270,7 @@ Resources:
       Protocol: HTTP
 
 Outputs:
-  ManagedInstanceSessionUrl:
+  ManagedInstanceUrl:
     Value: !Sub https://${AWS::Region}.console.aws.amazon.com/systems-manager/session-manager/${Instance}?region=${AWS::Region}
+  WikiUrl:
+    Value: !Sub http://${LoadBalancer.DNSName}
