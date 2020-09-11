@@ -17,6 +17,7 @@
 |RelayhostPort|String|587|送信サーバのポート番号|
 |RelayhostUser|String|(*required*)|送信サーバのユーザID|
 |RelayhostPass|String|(*required*)|送信サーバのパスワード|
+|CertificateArn|String|(*required*)|ロードバランサのリスナ(HTTPS)に設定する証明書(ACM)のArn|
 
 ```sh
 # e.g.
@@ -24,6 +25,9 @@ SNAPSHOT_ID=snap-0927dbdc6113398f0
 RELAYHOST=smtp.example.com
 RELAYHOST_USER=user@smtp.example.com
 RELAYHOST_PASS=password
+CERTIFICATE_ARN=$(aws acm list-certificates \
+  --query 'CertificateSummaryList[?DomainName==`*.example.com`].CertificateArn' \
+  --output text)
 ```
 
 ### create-stack
@@ -35,6 +39,7 @@ aws cloudformation create-stack \
                  ParameterKey=Relayhost,ParameterValue=${RELAYHOST} \
                  ParameterKey=RelayhostUser,ParameterValue=${RELAYHOST_USER} \
                  ParameterKey=RelayhostPass,ParameterValue=${RELAYHOST_PASS} \
+                 ParameterKey=CertificateArn,ParameterValue=${CERTIFICATE_ARN} \
     --capabilities CAPABILITY_IAM \
     --template-body file://template.yaml
 ```
