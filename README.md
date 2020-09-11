@@ -11,7 +11,6 @@
 |ImageId|`AWS::EC2::Image::Id`|ami-0cc75a8978fbbc969|EC2インスタンスのAMI|
 |InstanceType|String|t2.micro|EC2インスタンスのInstanceType|
 |SnapshotId|String|(*required*)|`/wiki`にマウントするボリュームの[スナップショット](https://ap-northeast-1.console.aws.amazon.com/ec2/v2/home?region=ap-northeast-1#Snapshots:sort=desc:startTime)|
-|AvailabilityZone|`AWS::EC2::AvailabilityZone::Name`|ap-northeast-1a|EC2インスタンスを構築するAZ|
 |DockerComposeVersion|String|1.26.2|利用するdocker-composeのバージョン|
 |Relayhost|String|(*required*)|送信サーバ|
 |RelayhostPort|String|587|送信サーバのポート番号|

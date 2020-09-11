@@ -9,9 +9,6 @@ Parameters:
     Default: t2.micro
   SnapshotId:
     Type: String
-  AvailabilityZone:
-    Type: AWS::EC2::AvailabilityZone::Name
-    Default: ap-northeast-1a
   DockerComposeVersion:
     Type: String
     Default: 1.26.2
@@ -130,7 +127,7 @@ Resources:
   Instance: 
     Type: AWS::EC2::Instance
     Properties:
-      AvailabilityZone: !Ref AvailabilityZone
+      AvailabilityZone: !GetAtt Subnet1.AvailabilityZone
       ImageId: !Ref ImageId
       InstanceType: !Ref InstanceType
       Tags:
