@@ -143,6 +143,9 @@ Resources:
         SubnetId: !Ref Subnet1
         GroupSet:
         - !Ref SecurityGroup
+  # ----------------------------------------------------------------------------
+  # Identity and Access Management
+  # ----------------------------------------------------------------------------
   IamInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -161,6 +164,21 @@ Resources:
       Description: Allows EC2 instances to call AWS services on your behalf.
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+  LifecyclePolicyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: dlm.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole
+  # ----------------------------------------------------------------------------
+  # Elastic Block Store
+  # ----------------------------------------------------------------------------
   Volume:
     Type: AWS::EC2::Volume
     Properties:
@@ -196,18 +214,6 @@ Resources:
         - Key: Name
           Value: !Ref AWS::StackName
       State: ENABLED
-  LifecyclePolicyRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service: dlm.amazonaws.com
-          Action: sts:AssumeRole
-      ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole
   # ----------------------------------------------------------------------------
   # Network & Security
   # ----------------------------------------------------------------------------
@@ -220,10 +226,6 @@ Resources:
       - SourceSecurityGroupId: !Ref LBSecurityGroup
         FromPort: 80
         ToPort: 80
-        IpProtocol: tcp
-      - CidrIp: 0.0.0.0/0
-        FromPort: 22
-        ToPort: 22
         IpProtocol: tcp
   LBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -288,5 +290,3 @@ Resources:
 Outputs:
   ManagedInstanceUrl:
     Value: !Sub https://${AWS::Region}.console.aws.amazon.com/systems-manager/session-manager/${Instance}?region=${AWS::Region}
-  WikiUrl:
-    Value: !Sub http://${LoadBalancer.DNSName}
