@@ -24,6 +24,8 @@ Parameters:
     Type: String
   RelayhostPass:
     Type: String
+  CertificateArn:
+    Type: String
 
 Resources:
   # ----------------------------------------------------------------------------
@@ -144,7 +146,6 @@ Resources:
         SubnetId: !Ref Subnet1
         GroupSet:
         - !Ref SecurityGroup
-      KeyName: wiki
   IamInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
@@ -219,7 +220,7 @@ Resources:
       VpcId: !Ref Vpc
       GroupDescription: wiki
       SecurityGroupIngress:
-      - CidrIp: 0.0.0.0/0
+      - SourceSecurityGroupId: !Ref LBSecurityGroup
         FromPort: 80
         ToPort: 80
         IpProtocol: tcp
@@ -236,6 +237,10 @@ Resources:
       - CidrIp: 0.0.0.0/0
         FromPort: 80
         ToPort: 80
+        IpProtocol: tcp
+      - CidrIp: 0.0.0.0/0
+        FromPort: 443
+        ToPort: 443
         IpProtocol: tcp
   # ----------------------------------------------------------------------------
   # Load Balancing
@@ -259,15 +264,29 @@ Resources:
       Subnets:
       - !Ref Subnet1
       - !Ref Subnet2
-  Listener:
+  ListenerHttp:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       DefaultActions:
-      - TargetGroupArn: !Ref TargetGroup
-        Type: forward
+      - Type: redirect
+        RedirectConfig:
+          Protocol: HTTPS
+          Port: 443
+          StatusCode: HTTP_301
       Port: 80
       Protocol: HTTP
+  ListenerHttps:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref TargetGroup
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+      - CertificateArn: !Ref CertificateArn
 
 Outputs:
   ManagedInstanceUrl:

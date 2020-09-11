@@ -1,4 +1,6 @@
-# pukiwiki-instance
+# pukiwiki-aws-resources
+
+- [PukiWiki](https://github.com/nemodija/pukiwiki-compose)をAWSに構築するためのCloudFormation
 
 ## deploy
 
