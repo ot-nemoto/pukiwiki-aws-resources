@@ -92,7 +92,7 @@ Resources:
             systemctl disable postfix
             systemctl stop postfix
             yum -y update
-            yum -y install docker git
+            yum -y install docker git awslogs
             systemctl enable docker
             systemctl start docker
             sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-`uname -s`-`uname -m`" -o /usr/local/bin/docker-compose
@@ -117,6 +117,33 @@ Resources:
             mkdir /var/log/wiki
             mkdir /var/log/mail && chown 101:4 /var/log/mail
             docker-compose -f docker-compose.yml -f env.yml up -d
+            # CloudWatch Logs Agent
+            sed -i -e "s/^\(region = \).*/\1${AWS::Region}/g" /etc/awslogs/awscli.conf
+            cat <<EOT >> /etc/awslogs/awslogs.conf
+
+            [/var/log/wiki/access_log]
+            file = /var/log/wiki/access_log
+            buffer_duration = 5000
+            log_stream_name = {instance_id}
+            initial_position = start_of_file
+            log_group_name = /var/log/wiki/access_log
+
+            [/var/log/wiki/error_log]
+            file = /var/log/wiki/error_log
+            buffer_duration = 5000
+            log_stream_name = {instance_id}
+            initial_position = start_of_file
+            log_group_name = /var/log/wiki/error_log
+
+            [/var/log/mail/mail.log]
+            file = /var/log/mail/mail.log
+            buffer_duration = 5000
+            log_stream_name = {instance_id}
+            initial_position = start_of_file
+            log_group_name = /var/log/mail/mail.log
+            EOT
+            systemctl start awslogsd
+            systemctl enable awslogsd
           - {
               DOCKER_COMPOSE_VERSION: !Ref DockerComposeVersion,
               RELAYHOST: !Ref Relayhost,
@@ -164,6 +191,22 @@ Resources:
       Description: Allows EC2 instances to call AWS services on your behalf.
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+  InstanceCloudwatchLogsPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: InstanceCloudwatchLogsPolicy
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Action:
+          - logs:CreateLogGroup
+          - logs:CreateLogStream
+          - logs:PutLogEvents
+          - logs:DescribeLogStreams
+          Resource: "*"
+      Roles:
+      - !Ref InstanceRole
   LifecyclePolicyRole:
     Type: AWS::IAM::Role
     Properties:
